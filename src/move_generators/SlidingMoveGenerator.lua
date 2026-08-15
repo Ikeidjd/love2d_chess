@@ -1,19 +1,19 @@
 local MoveGenerator = require "move_generators.MoveGenerator"
 local BasicMove     = require "moves.BasicMove"
 
-local Sliding = {
+local SlidingMoveGenerator = {
     dirs = {},
 }
 
-MoveGenerator:extend(Sliding, "SlidingMoveGenerator")
+MoveGenerator:extend(SlidingMoveGenerator, "SlidingMoveGenerator")
 
-function Sliding:new(dirs)
+function SlidingMoveGenerator:new(dirs)
     return MoveGenerator.new(self, {
         dirs = dirs,
     })
 end
 
-function Sliding:generate(from, board)
+function SlidingMoveGenerator:generate(from, board)
     local piece = MoveGenerator.get_piece(from, board)
 
     for _, dir in ipairs(self.dirs) do
@@ -30,4 +30,4 @@ function Sliding:generate(from, board)
     end
 end
 
-return Sliding
+return SlidingMoveGenerator
