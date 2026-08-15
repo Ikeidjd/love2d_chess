@@ -1,0 +1,22 @@
+extern vec2 initial_screen_size;
+
+vec4 position(mat4 transform_projection, vec4 vertex_position) {
+    number scale_x = love_ScreenSize.x / initial_screen_size.x;
+    number scale_y = love_ScreenSize.y / initial_screen_size.y;
+
+    number offset_x = 0;
+    number offset_y = 0;
+
+    if (scale_x < scale_y) {
+        scale_y = scale_x;
+        offset_y = (love_ScreenSize.y - initial_screen_size.y * scale_y) / 2;
+    } else {
+        scale_x = scale_y;
+        offset_x = (love_ScreenSize.x - initial_screen_size.x * scale_x) / 2;
+    }
+
+    vec4 scale = vec4(scale_x, scale_y, 1, 1);
+    vec4 offset = vec4(offset_x, offset_y, 0, 0);
+
+    return transform_projection * (vertex_position * scale + offset);
+}
