@@ -1,0 +1,10 @@
+extern number scale_num = 1;
+extern number offset_x = 0;
+extern number offset_y = 0;
+
+vec4 position(mat4 transform_projection, vec4 vertex_position) {
+    vec4 scale = vec4(scale_num, scale_num, 1, 1);
+    vec4 offset = vec4(offset_x, offset_y, 0, 0);
+
+    return transform_projection * (vertex_position * scale + offset);
+}

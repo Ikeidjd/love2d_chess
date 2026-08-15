@@ -5,6 +5,8 @@ local Pos    = require "Pos"
 local Board = {
     width = 0,
     height = 0,
+    selected_piece = nil,
+    selected_piece_follows_cursor = false,
 }
 
 Object:extend(Board, "Board")
@@ -24,6 +26,31 @@ function Board:new(width, height)
     end
 
     return Object.new(self, board)
+end
+
+function Board:update()
+    local x, y = self:get_mouse_coords()
+
+    local pos = Pos:from_pixel_coords(x, y, self)
+    --print(pos:tostring())
+
+    local piece = self:get(pos)
+
+    if MouseJustPressed[MOUSE_LEFT] then
+        if piece:is_actual_piece() then
+            piece:generate_moves(pos, self)
+            self.selected_piece = piece
+            self.selected_piece_follows_cursor = true
+        elseif self.selected_piece and not self.selected_piece:get_move(pos) then
+            self.selected_piece = nil
+        end
+    elseif MouseJustReleased[MOUSE_LEFT] then
+        if self.selected_piece and self.selected_piece:get_move(pos) then
+            print("MOVING TO " .. pos:tostring())
+        else
+            self.selected_piece_follows_cursor = false
+        end
+    end
 end
 
 function Board:draw()
@@ -48,26 +75,47 @@ function Board:draw()
     for rank = 1, self.height do
         for file = 1, self.width do
             local pos = Pos:new(rank, file)
-            self:get(pos):draw(pos, self)
+            local piece = self:get(pos)
+
+            if not self.selected_piece_follows_cursor or piece ~= self.selected_piece then
+                piece:draw(pos, self)
+            end
+        end
+    end
+
+    if self.selected_piece then
+        self.selected_piece:draw_moves(self)
+        if self.selected_piece_follows_cursor then
+            local x, y = self:get_mouse_coords()
+            self.selected_piece:draw_on_coords(x, y)
         end
     end
 end
 
+function Board:get_mouse_coords()
+    local x, y = love.mouse.getPosition()
+
+    x = (x - BOARD_OFFSET_X) / BOARD_SCALE
+    y = (y - BOARD_OFFSET_Y) / BOARD_SCALE
+
+    return x, y
+end
+
+function Board:is_empty(pos)
+    return self:get(pos):is_empty()
+end
+
 function Board:in_bounds(pos)
-    return pos.rank >= 1 and pos.rank <= self.height and pos.file >= 1 and pos.rank <= self.width
+    return pos.rank >= 1 and pos.rank <= self.height and pos.file >= 1 and pos.file <= self.width
 end
 
 function Board:get(pos)
-    if not self:in_bounds(pos) then
-        return Piece:new_out_of_bounds()
-    end
-
+    if not self:in_bounds(pos) then return Piece:new_out_of_bounds() end
     return self[pos.rank][pos.file]
 end
 
 function Board:set(pos, piece)
     assert(self:in_bounds(pos), pos:tostring() .. " is out of bounds for " .. Object.tostring(self))
-
     self[pos.rank][pos.file] = piece
 end
 

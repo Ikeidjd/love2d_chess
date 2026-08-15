@@ -9,6 +9,7 @@ local types = {
 }
 
 function Object:extend(subclass, type)
+    assert(type, "Every object must have a type")
     assert(not types[type], "Type " .. type .. " already exists")
     types[type] = true
 
