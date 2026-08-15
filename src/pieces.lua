@@ -1,6 +1,6 @@
 local Piece                = require "Piece"
 local Dir                  = require "Dir"
-local SlidingMoveGenerator = require "move_generator.Sliding"
+local SlidingMoveGenerator = require "move_generators.Sliding"
 
 local pieces = {}
 

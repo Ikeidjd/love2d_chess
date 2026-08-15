@@ -43,10 +43,13 @@ function Board:update()
             self.selected_piece_follows_cursor = true
         elseif self.selected_piece and not self.selected_piece:get_move(pos) then
             self.selected_piece = nil
+            self.selected_piece_follows_cursor = false
         end
     elseif MouseJustReleased[MOUSE_LEFT] then
         if self.selected_piece and self.selected_piece:get_move(pos) then
-            print("MOVING TO " .. pos:tostring())
+            self.selected_piece:get_move(pos):perform(self)
+            self.selected_piece = nil
+            self.selected_piece_follows_cursor = false
         else
             self.selected_piece_follows_cursor = false
         end

@@ -36,14 +36,12 @@ Dir.ROOK_DIRS = {
     Dir:new(-1, 0),
 }
 
-Dir.QUEEN_DIRS = {
-    table.unpack(Dir.BISHOP_DIRS),
-    table.unpack(Dir.ROOK_DIRS),
-}
+Dir.QUEEN_DIRS = {table.unpack(Dir.BISHOP_DIRS)}
 
-Dir.KING_DIRS = {
-    table.unpack(Dir.BISHOP_DIRS),
-    table.unpack(Dir.ROOK_DIRS),
-}
+for _, value in ipairs(Dir.ROOK_DIRS) do
+    table.insert(Dir.QUEEN_DIRS, value)
+end
+
+Dir.KING_DIRS = {table.unpack(Dir.QUEEN_DIRS)}
 
 return Dir
