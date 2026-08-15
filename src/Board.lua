@@ -104,6 +104,31 @@ function Board:get_mouse_coords()
     return x, y
 end
 
+function Board:get_pieces()
+    local rank = 1
+    local file = 1
+
+    local function next_piece()
+        if rank > self.height then return end
+
+        local pos = Pos:new(rank, file)
+        local piece = self:get(pos)
+
+        file = file + 1
+
+        if file > self.width then
+            rank = rank + 1
+            file = 1
+        end
+
+        if piece:is_empty() then return next_piece() end
+
+        return pos, piece
+    end
+
+    return next_piece
+end
+
 function Board:is_empty(pos)
     return self:get(pos):is_empty()
 end

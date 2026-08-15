@@ -2,6 +2,7 @@ local Piece                = require "Piece"
 local Dir                  = require "Dir"
 local SingleMoveGenerator  = require "move_generators.SingleMoveGenerator"
 local SlidingMoveGenerator = require "move_generators.SlidingMoveGenerator"
+local CastleMoveGenerator  = require "move_generators.CastleMoveGenerator"
 
 local pieces = {}
 
@@ -14,7 +15,7 @@ function pieces.new_knight(color)
 end
 
 function pieces.new_rook(color)
-    return Piece:new(color, "rook", {SlidingMoveGenerator:new(Dir.ROOK_DIRS)})
+    return Piece:new(color, "rook", {SlidingMoveGenerator:new(Dir.ROOK_DIRS)}, {castle_target = true})
 end
 
 function pieces.new_queen(color)
@@ -22,7 +23,10 @@ function pieces.new_queen(color)
 end
 
 function pieces.new_king(color)
-    return Piece:new(color, "king", {SingleMoveGenerator:new(Dir.KING_DIRS)})
+    return Piece:new(color, "king", {
+        SingleMoveGenerator:new(Dir.KING_DIRS),
+        CastleMoveGenerator:new(),
+    })
 end
 
 return pieces

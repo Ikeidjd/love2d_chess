@@ -1,5 +1,6 @@
 local Object = require "Object"
 local Piece  = require "Piece"
+local Dir    = require "Dir"
 
 local Pos = {
     rank = 0,
@@ -15,10 +16,6 @@ function Pos:new(rank, file)
     })
 end
 
-function Pos:__add(dir)
-    return Pos:new(self.rank + dir.drank, self.file + dir.dfile)
-end
-
 function Pos:from_pixel_coords(x, y, board)
     local rank = math.ceil(board.height - y / Piece.SIZE)
     local file = math.ceil(x / Piece.SIZE)
@@ -31,6 +28,18 @@ function Pos:to_pixel_coords(board)
     local y = (board.height - self.rank) * Piece.SIZE
 
     return x, y
+end
+
+function Pos:__add(dir)
+    return Pos:new(self.rank + dir.drank, self.file + dir.dfile)
+end
+
+function Pos:__sub(pos)
+    return Dir:new(self.rank - pos.rank, self.file - pos.file)
+end
+
+function Pos:__eq(pos)
+    return self.rank == pos.rank and self.file == pos.file
 end
 
 return Pos

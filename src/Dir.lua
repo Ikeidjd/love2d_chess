@@ -11,6 +11,14 @@ function Dir:new(drank, dfile)
     })
 end
 
+function Dir:normalize()
+    return Dir:new(math.signum(self.drank), math.signum(self.dfile))
+end
+
+function Dir:__mul(n)
+    return self:new(self.drank * n, self.dfile * n)
+end
+
 Dir.KNIGHT_DIRS = {
     Dir:new(1, 2),
     Dir:new(-1, 2),

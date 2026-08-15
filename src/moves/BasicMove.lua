@@ -1,5 +1,5 @@
-local Move = require "moves.Move"
-local Piece= require "Piece"
+local Move  = require "moves.Move"
+local Piece = require "Piece"
 
 local BasicMove = {
     from = {},
@@ -16,7 +16,10 @@ function BasicMove:new(from, to)
 end
 
 function BasicMove:perform(board)
-    board:set(self.to, board:get(self.from))
+    local piece = board:get(self.from)
+    piece.tags.has_moved = true
+
+    board:set(self.to, piece)
     board:set(self.from, Piece:new_empty())
 end
 

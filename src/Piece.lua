@@ -11,19 +11,24 @@ local Piece = {
     color = "",
     name = "",
     move_generators = {},
+    tags = {},
     moves = {},
     sprite = {},
 }
 
 Object:extend(Piece, "Piece")
 
-function Piece:new(color, name, move_generators)
+function Piece:new(color, name, move_generators, tags)
+    move_generators = move_generators or {}
+    tags = tags or {}
+
     local sprite = sprites[color] and sprites[color][name]
 
     return Object.new(self, {
         color = color,
         name = (color:sub(1, 1) .. name:sub(1, 1)):upper(),
         move_generators = move_generators,
+        tags = tags,
         sprite = sprite,
     })
 end
@@ -115,6 +120,10 @@ end
 
 function Piece:is_actual_piece()
     return not self:is_empty() and not self:is_out_of_bounds()
+end
+
+function Piece:is_friend(piece)
+    return self:is_actual_piece() and piece:is_actual_piece() and self.color == piece.color
 end
 
 function Piece:is_enemy(piece)

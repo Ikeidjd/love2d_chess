@@ -47,7 +47,7 @@ function Object:is_object()
 end
 
 function Object:tostring()
-    local out = self._OBJECT_TYPE .. " {"
+    local out = (self._OBJECT_TYPE or "Unknown Type") .. " {"
 
     for k, v in pairs(self) do
         if type(k) ~= "number" then
