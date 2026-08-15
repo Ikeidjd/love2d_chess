@@ -36,7 +36,7 @@ BOARD_OFFSET_Y = 0
 function love.load()
     love.window.setMode(initial_screen_width * 2, initial_screen_height * 2, {fullscreen = false, resizable = true})
     love.resize(love.graphics.getWidth(), love.graphics.getHeight())
-    board_setup.castle_test_board(state.board)
+    board_setup.normal_board(state.board)
 end
 
 function love.update()

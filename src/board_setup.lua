@@ -24,8 +24,8 @@ function board_setup.normal_board(board)
     board:set(Pos:new(8, 8), pieces.new_rook(Piece.BLACK))
 
     for file = 1, board.width do
-        board:set(Pos:new(2, file), Piece:new(Piece.WHITE, "pawn", {}))
-        board:set(Pos:new(7, file), Piece:new(Piece.BLACK, "pawn", {}))
+        board:set(Pos:new(2, file), pieces.new_pawn(Piece.WHITE))
+        board:set(Pos:new(7, file), pieces.new_pawn(Piece.BLACK))
     end
 end
 

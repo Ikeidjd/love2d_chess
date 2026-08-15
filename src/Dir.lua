@@ -15,8 +15,12 @@ function Dir:normalize()
     return Dir:new(math.signum(self.drank), math.signum(self.dfile))
 end
 
+function Dir:__add(dir)
+    return Dir:new(self.drank + dir.drank, self.dfile + dir.dfile)
+end
+
 function Dir:__mul(n)
-    return self:new(self.drank * n, self.dfile * n)
+    return Dir:new(self.drank * n, self.dfile * n)
 end
 
 Dir.KNIGHT_DIRS = {

@@ -6,14 +6,15 @@ local CastleMoveGenerator = {}
 
 MoveGenerator:extend(CastleMoveGenerator, "CastleMoveGenerator")
 
+function CastleMoveGenerator:new()
+    return MoveGenerator.new(self, true, false)
+end
+
 local function try_add_castle(castle_doer_from, castle_target_from, castle_doer, castle_target, board)
     if not castle_doer:is_friend(castle_target) then return end
     if not castle_target.tags.castle_target then return end
     if castle_doer.tags.has_moved then return end
     if castle_target.tags.has_moved then return end
-
-    print(castle_doer_from:tostring())
-    print(castle_target_from:tostring())
 
     local dir = (castle_target_from - castle_doer_from):normalize()
     local pos = castle_doer_from + dir

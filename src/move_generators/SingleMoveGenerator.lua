@@ -7,10 +7,10 @@ local SingleMoveGenerator = {
 
 MoveGenerator:extend(SingleMoveGenerator, "SingleMoveGenerator")
 
-function SingleMoveGenerator:new(dirs)
-    return MoveGenerator.new(self, {
-        dirs = dirs,
-    })
+function SingleMoveGenerator:new(dirs, can_move, can_capture)
+    local out = MoveGenerator.new(self, can_move, can_capture)
+    out.dirs = dirs
+    return out
 end
 
 function SingleMoveGenerator:generate(from, board)
@@ -20,7 +20,7 @@ function SingleMoveGenerator:generate(from, board)
         local to = from + dir
         local target_piece = board:get(to)
 
-        if target_piece:is_empty() or piece:is_enemy(target_piece) then
+        if self.can_move and target_piece:is_empty() or self.can_capture and piece:is_enemy(target_piece) then
             piece:insert_move(to, BasicMove:new(from, to))
         end
     end
