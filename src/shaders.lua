@@ -3,7 +3,7 @@ local function make_shader(name)
 end
 
 local shaders = {
-    scale = make_shader("scale_and_center_board")
+    scale_and_center_board = make_shader("scale_and_center_board")
 }
 
 return shaders

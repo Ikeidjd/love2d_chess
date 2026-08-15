@@ -51,11 +51,33 @@ function Object:tostring()
 
     for k, v in pairs(self) do
         if type(k) ~= "number" then
+            if type(v) == "table" then v = Object.tostring(v) end
             out = out .. tostring(k) .. " = " .. tostring(v) .. ","
         end
     end
 
     return out .. "}"
+end
+
+function Object:shallowcopy()
+    local out = setmetatable({}, getmetatable(self))
+
+    for k, v in pairs(self) do
+        out[k] = v
+    end
+
+    return out
+end
+
+function Object:deepcopy()
+    local out = setmetatable({}, getmetatable(self))
+
+    for k, v in pairs(self) do
+        if type(v) == "table" then out[k] = Object.deepcopy(v)
+        else out[k] = v end
+    end
+
+    return out
 end
 
 return Object

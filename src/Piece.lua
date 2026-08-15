@@ -130,4 +130,9 @@ function Piece:is_enemy(piece)
     return self:is_actual_piece() and piece:is_actual_piece() and self.color ~= piece.color
 end
 
+function Piece.get_opposite_color(color)
+    if color == Piece.WHITE then return Piece.BLACK
+    else return Piece.WHITE end
+end
+
 return Piece

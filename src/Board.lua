@@ -28,7 +28,7 @@ function Board:new(width, height)
     return Object.new(self, board)
 end
 
-function Board:update()
+function Board:update(turn)
     local x, y = self:get_mouse_coords()
 
     local pos = Pos:from_pixel_coords(x, y, self)
@@ -37,7 +37,7 @@ function Board:update()
     local piece = self:get(pos)
 
     if MouseJustPressed[MOUSE_LEFT] then
-        if piece:is_actual_piece() then
+        if piece:is_actual_piece() and piece.color == turn then
             piece:generate_moves(pos, self)
             self.selected_piece = piece
             self.selected_piece_follows_cursor = true
@@ -50,10 +50,13 @@ function Board:update()
             self.selected_piece:get_move(pos):perform(self)
             self.selected_piece = nil
             self.selected_piece_follows_cursor = false
+            turn = Piece.get_opposite_color(turn)
         else
             self.selected_piece_follows_cursor = false
         end
     end
+
+    return turn
 end
 
 function Board:draw()
@@ -127,6 +130,24 @@ function Board:get_pieces()
     end
 
     return next_piece
+end
+
+function Board:copy()
+    local board_copy = Board:new(self.width, self.height)
+
+    for pos, piece in self:get_pieces() do
+        local piece_copy = piece:shallowcopy()
+        piece_copy.tags = Object.shallowcopy(piece.tags)
+        board_copy:set(pos, piece_copy)
+    end
+
+    return board_copy
+end
+
+function Board:simulate_move(move)
+    local board_copy = self:copy()
+    move:perform(board_copy)
+    return board_copy
 end
 
 function Board:is_empty(pos)

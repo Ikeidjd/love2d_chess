@@ -15,6 +15,8 @@ local pieces      = require "pieces"
 local Pos         = require "Pos"
 local shaders     = require "shaders"
 local board_setup = require "board_setup"
+local Chessstate = require "gamestate.Chessstate"
+local BlindGreedBot = require "bots.BlindGreedBot"
 
 MouseJustPressed = {}
 MouseJustReleased = {}
@@ -22,12 +24,10 @@ MOUSE_LEFT = 1
 MOUSE_RIGHT = 2
 MOUSE_MIDDLE = 3
 
-local state = {
-    board = Board:new(8, 8),
-}
+CurGamestate = Chessstate:new(board_setup.normal_board(Board:new(8, 8)), BlindGreedBot:new())
 
-local initial_screen_width = Piece.SIZE * state.board.width
-local initial_screen_height = Piece.SIZE * state.board.height
+local initial_screen_width = Piece.SIZE * CurGamestate.board.width
+local initial_screen_height = Piece.SIZE * CurGamestate.board.height
 
 BOARD_SCALE = 1
 BOARD_OFFSET_X = 0
@@ -36,18 +36,16 @@ BOARD_OFFSET_Y = 0
 function love.load()
     love.window.setMode(initial_screen_width * 2, initial_screen_height * 2, {fullscreen = false, resizable = true})
     love.resize(love.graphics.getWidth(), love.graphics.getHeight())
-    board_setup.normal_board(state.board)
 end
 
 function love.update()
-    state.board:update()
+    CurGamestate:update()
     MouseJustPressed = {}
     MouseJustReleased = {}
 end
 
 function love.draw()
-    love.graphics.setShader(shaders.scale)
-    state.board:draw()
+    CurGamestate:draw()
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -74,7 +72,7 @@ function love.resize(w, h)
     BOARD_OFFSET_X = (w - initial_screen_width * BOARD_SCALE) / 2;
     BOARD_OFFSET_Y = (h - initial_screen_height * BOARD_SCALE) / 2;
 
-    shaders.scale:send("scale_num", BOARD_SCALE)
-    shaders.scale:send("offset_x", BOARD_OFFSET_X)
-    shaders.scale:send("offset_y", BOARD_OFFSET_Y)
+    shaders.scale_and_center_board:send("scale_num", BOARD_SCALE)
+    shaders.scale_and_center_board:send("offset_x", BOARD_OFFSET_X)
+    shaders.scale_and_center_board:send("offset_y", BOARD_OFFSET_Y)
 end
