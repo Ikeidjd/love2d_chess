@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define BOARD_SIZE 8
 
@@ -48,6 +49,10 @@ typedef struct {
     u8 rank;
     u8 file;
 } Pos;
+
+bool pos_eq(Pos lhs, Pos rhs) {
+    return lhs.rank == rhs.rank && lhs.file == rhs.file;
+}
 
 void pos_print(Pos pos) {
     printf("Pos (rank = %d, file = %d)", pos.rank, pos.file);
@@ -139,7 +144,7 @@ void board_print(Board board) {
     }
 }
 
-Board board = {
+Board normal_board = {
     {(WHITE_ROOK << 4) | WHITE_KNIGHT, (WHITE_BISHOP << 4) | WHITE_QUEEN, (WHITE_KING << 4) | WHITE_BISHOP, (WHITE_KNIGHT << 4) | WHITE_ROOK},
     {(WHITE_PAWN << 4) | WHITE_PAWN, (WHITE_PAWN << 4) | WHITE_PAWN, (WHITE_PAWN << 4) | WHITE_PAWN, (WHITE_PAWN << 4) | WHITE_PAWN},
     {EMPTY},
@@ -148,6 +153,44 @@ Board board = {
     {EMPTY},
     {(BLACK_PAWN << 4) | BLACK_PAWN, (BLACK_PAWN << 4) | BLACK_PAWN, (BLACK_PAWN << 4) | BLACK_PAWN, (BLACK_PAWN << 4) | BLACK_PAWN},
     {(BLACK_ROOK << 4) | BLACK_KNIGHT, (BLACK_BISHOP << 4) | BLACK_QUEEN, (BLACK_KING << 4) | BLACK_BISHOP, (BLACK_KNIGHT << 4) | BLACK_ROOK},
+};
+
+Board pawnless_board = {
+    {(WHITE_ROOK << 4) | WHITE_KNIGHT, (WHITE_BISHOP << 4) | WHITE_QUEEN, (WHITE_KING << 4) | WHITE_BISHOP, (WHITE_KNIGHT << 4) | WHITE_ROOK},
+    {EMPTY},
+    {EMPTY},
+    {EMPTY},
+    {EMPTY},
+    {EMPTY},
+    {EMPTY},
+    {(BLACK_ROOK << 4) | BLACK_KNIGHT, (BLACK_BISHOP << 4) | BLACK_QUEEN, (BLACK_KING << 4) | BLACK_BISHOP, (BLACK_KNIGHT << 4) | BLACK_ROOK},
+};
+
+Board castle_test_board = {
+    {(WHITE_ROOK << 4) | EMPTY, (EMPTY << 4) | EMPTY, (WHITE_KING << 4) | EMPTY, (EMPTY << 4) | WHITE_ROOK},
+    {EMPTY},
+    {EMPTY},
+    {EMPTY},
+    {EMPTY},
+    {EMPTY},
+    {EMPTY},
+    {(BLACK_ROOK << 4) | EMPTY, (EMPTY << 4) | EMPTY, (BLACK_KING << 4) | EMPTY, (EMPTY << 4) | BLACK_ROOK},
+};
+
+Board global_board;
+
+typedef struct {
+    bool can_white_kingside;
+    bool can_white_queenside;
+    bool can_black_kingside;
+    bool can_black_queenside;
+} CastleInfo;
+
+CastleInfo global_castle_info = {
+    .can_white_kingside = true,
+    .can_white_queenside = true,
+    .can_black_kingside = true,
+    .can_black_queenside = true,
 };
 
 typedef enum {
@@ -184,6 +227,8 @@ typedef struct {
     } as;
 } Move;
 
+typedef Move MoveBuffer[32];
+
 Move move_new_normal(Pos from, Pos to) {
     return (Move) {
         .type = MOVE_NORMAL,
@@ -194,14 +239,56 @@ Move move_new_normal(Pos from, Pos to) {
     };
 }
 
-void move_perform(Board board, Move move) {
+Move move_new_castle(Pos king_pos, bool is_kingside) {
+    return (Move) {
+        .type = MOVE_CASTLE,
+        .as.castle = {
+            .king_pos = king_pos,
+            .is_kingside = is_kingside,
+        },
+    };
+}
+
+void move_perform(Board board, CastleInfo* castle_info, Move move) {
     switch (move.type) {
-        case MOVE_NORMAL:
+        case MOVE_NORMAL: {
+            if (pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 7 }) || pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 4 })) castle_info->can_white_kingside = false;
+            if (pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 0 }) || pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 4 })) castle_info->can_white_queenside = false;
+            if (pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 7 }) || pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 4 })) castle_info->can_black_kingside = false;
+            if (pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 0 }) || pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 4 })) castle_info->can_black_queenside = false;
+
             board_set(board, move.as.normal.to, board_get(board, move.as.normal.from));
             board_set(board, move.as.normal.from, EMPTY);
+
             break;
-        case MOVE_CASTLE:
+        }
+        case MOVE_CASTLE: {
+            PieceType king = board_get(board, move.as.castle.king_pos);
+
+            Pos king_from = move.as.castle.king_pos;
+            Pos king_to = move.as.castle.king_pos;
+
+            Pos rook_from = move.as.castle.king_pos;
+            Pos rook_to = move.as.castle.king_pos;
+
+            if (move.as.castle.is_kingside) {
+                king_to.file = king_from.file + 2;
+                rook_from.file = 7;
+                rook_to.file = king_from.file + 1;
+            } else {
+                king_to.file = king_from.file - 2;
+                rook_from.file = 0;
+                rook_to.file = king_from.file - 1;
+            }
+
+            Move king_move = move_new_normal(king_from, king_to);
+            Move rook_move = move_new_normal(rook_from, rook_to);
+
+            move_perform(board, castle_info, king_move);
+            move_perform(board, castle_info, rook_move);
+
             break;
+        }
         case MOVE_EN_PASSANT:
             break;
         case MOVE_PROMOTION:
@@ -219,7 +306,7 @@ void move_print(Move move) {
             printf(")");
             break;
         case MOVE_CASTLE:
-            printf("MoveCastle(king_pos = ");
+            printf("MoveCastle (king_pos = ");
             pos_print(move.as.castle.king_pos);
 
             if (move.as.castle.is_kingside) {
@@ -248,12 +335,12 @@ void move_print(Move move) {
     }
 }
 
-#define INSERT_MOVE(moves, move_index, move) \
+#define MOVE_INSERT(moves, move_index, move) \
     do { \
         (moves)[(*(move_index))++] = (move); \
     } while (0)
 
-void generate_single_moves(Board board, Pos from, Move* moves, u8* move_index, Dir* dirs, u8 dirs_length) {
+void generate_single_moves(Board board, Pos from, MoveBuffer moves, u8* move_index, Dir* dirs, u8 dirs_length) {
     PieceType piece_from = board_get(board, from);
 
     for (u8 i = 0; i < dirs_length; i++) {
@@ -263,42 +350,127 @@ void generate_single_moves(Board board, Pos from, Move* moves, u8* move_index, D
 
         if (piece_to == EMPTY || are_enemies(piece_from, piece_to)) {
             Move move = move_new_normal(from, to);
-            INSERT_MOVE(moves, move_index, move);
+            MOVE_INSERT(moves, move_index, move);
         }
     }
 }
 
-void generate_sliding_moves(Board board, Pos from, Move* moves, u8* move_index, Dir* dirs, u8 dirs_length) {
+void generate_sliding_moves(Board board, Pos from, MoveBuffer moves, u8* move_index, Dir* dirs, u8 dirs_length) {
     PieceType piece_from = board_get(board, from);
 
     for (u8 i = 0; i < dirs_length; i++) {
         Dir dir = dirs[i];
         Pos to = pos_add_dir(from, dir);
-        PieceType piece_to = board_get(board, to);
 
-        while (piece_to == EMPTY) {
+        while (board_get(board, to) == EMPTY) {
             Move move = move_new_normal(from, to);
-            INSERT_MOVE(moves, move_index, move);
-
+            MOVE_INSERT(moves, move_index, move);
             to = pos_add_dir(to, dir);
-            piece_to = board_get(board, to);
         }
 
-        if (are_enemies(piece_from, piece_to)) {
-            Move move = {
-                .type = MOVE_NORMAL,
-                .as.normal = {
-                    .from = from,
-                    .to = to,
-                },
-            };
-
-            INSERT_MOVE(moves, move_index, move);
+        if (are_enemies(piece_from, board_get(board, to))) {
+            Move move = move_new_normal(from, to);
+            MOVE_INSERT(moves, move_index, move);
         }
     }
 }
 
-void generate_moves(Board board, Pos pos, Move* moves, u8* move_index) {
+void generate_basic_pawn_moves_and_captures(Board board, Pos from, MoveBuffer moves, u8* move_index) {
+    PieceType pawn = board_get(board, from);
+
+    u8 starting_rank;
+    Dir forward;
+
+    if (pawn == WHITE_PAWN) {
+        starting_rank = 1;
+
+        forward = (Dir) {
+            .drank = 1,
+            .dfile = 0,
+        };
+    } else {
+        starting_rank = 6;
+
+        forward = (Dir) {
+            .drank = -1,
+            .dfile = 0,
+        };
+    }
+
+    Pos to = pos_add_dir(from, forward);
+
+    // Captures
+    Pos capture = pos_add_dir(to, (Dir) { .drank = 0, .dfile = -1 });
+
+    if (are_enemies(pawn, board_get(board, capture))) {
+        Move move = move_new_normal(from, capture);
+        MOVE_INSERT(moves, move_index, move);
+    }
+
+    capture = pos_add_dir(to, (Dir) { .drank = 0, .dfile = 1 });
+
+    if (are_enemies(pawn, board_get(board, capture))) {
+        Move move = move_new_normal(from, capture);
+        MOVE_INSERT(moves, move_index, move);
+    }
+
+    // Moves
+    if (board_get(board, to) == EMPTY) {
+        Move move = move_new_normal(from, to);
+        MOVE_INSERT(moves, move_index, move);
+        to = pos_add_dir(to, forward);
+
+        if (from.rank == starting_rank && board_get(board, to) == EMPTY) {
+            Move move = move_new_normal(from, to);
+            MOVE_INSERT(moves, move_index, move);
+        }
+    }
+}
+
+void generate_castle(Board board, CastleInfo castle_info, Pos king_pos, MoveBuffer moves, u8* move_index, bool is_kingside) {
+    PieceType king = board_get(board, king_pos);
+
+    if (king == WHITE_KING) {
+        if (is_kingside && !castle_info.can_white_kingside) return;
+        if (!is_kingside && !castle_info.can_white_queenside) return;
+    } else {
+        if (is_kingside && !castle_info.can_black_kingside) return;
+        if (!is_kingside && !castle_info.can_black_queenside) return;
+    }
+
+    Dir dir;
+
+    if (is_kingside) {
+        dir = (Dir) {
+            .drank = 0,
+            .dfile = 1,
+        };
+    } else {
+        dir = (Dir) {
+            .drank = 0,
+            .dfile = -1,
+        };
+    }
+
+    Pos rook_pos = pos_add_dir(king_pos, dir);
+
+    while (board_get(board, rook_pos) == EMPTY) {
+        rook_pos = pos_add_dir(rook_pos, dir);
+    }
+
+    PieceType rook = board_get(board, rook_pos);
+
+    // If the rook and the king never move, then the flag that determines if castling is possible remains true, even if the rook is captured
+    // This means that if we just did (rook == WHITE_ROOK || rook == BLACK_ROOK), an unmoved white king could castle with a black rook that captured an unmoved white rook
+    // The same applies to the opposite colors
+    // Doing (king - rook == WHITE_KING - WHITE_ROOK) makes sure the king can only castle with a rook of the same color, preventing this problem
+    if (king - rook == WHITE_KING - WHITE_ROOK) {
+        Move move = move_new_castle(king_pos, is_kingside);
+        MOVE_INSERT(moves, move_index, move);
+    }
+}
+
+void generate_moves(Board board, CastleInfo castle_info, Pos pos, MoveBuffer moves, u8* move_index) {
     PieceType piece = board_get(board, pos);
 
     switch (piece) {
@@ -306,8 +478,8 @@ void generate_moves(Board board, Pos pos, Move* moves, u8* move_index) {
         case OUT_OF_BOUNDS:
             break;
         case WHITE_PAWN:
-            break;
         case BLACK_PAWN:
+            generate_basic_pawn_moves_and_captures(board, pos, moves, move_index);
             break;
         case WHITE_KNIGHT:
         case BLACK_KNIGHT:
@@ -328,13 +500,17 @@ void generate_moves(Board board, Pos pos, Move* moves, u8* move_index) {
         case WHITE_KING:
         case BLACK_KING:
             generate_single_moves(board, pos, moves, move_index, monarch_dirs, sizeof(monarch_dirs) / sizeof(monarch_dirs[0]));
+            generate_castle(board, castle_info, pos, moves, move_index, true);
+            generate_castle(board, castle_info, pos, moves, move_index, false);
             break;
     }
 }
 
 int main(int argc, char** argv) {
+    memcpy(global_board, castle_test_board, sizeof(global_board) / sizeof(global_board[0][0]));
+
     while (true) {
-        board_print(board);
+        board_print(global_board);
 
         char c;
         scanf("%c", &c);
@@ -371,7 +547,7 @@ int main(int argc, char** argv) {
                 };
 
                 Move move = move_new_normal(from, to);
-                move_perform(board, move);
+                move_perform(global_board, &global_castle_info, move);
 
                 break;
             }
@@ -392,10 +568,10 @@ int main(int argc, char** argv) {
                     .file = file,
                 };
 
-                Move moves[32];
+                MoveBuffer moves;
                 u8 move_index = 0;
 
-                generate_moves(board, pos, moves, &move_index);
+                generate_moves(global_board, global_castle_info, pos, moves, &move_index);
 
                 printf("%d moves\n", move_index);
 
@@ -412,7 +588,7 @@ int main(int argc, char** argv) {
                 scanf("%d", &i);
 
                 if (i > 0) {
-                    move_perform(board, moves[i - 1]);
+                    move_perform(global_board, &global_castle_info, moves[i - 1]);
                 }
 
                 break;
