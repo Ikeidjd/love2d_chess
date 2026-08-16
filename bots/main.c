@@ -252,12 +252,38 @@ Move move_new_castle(Pos king_pos, bool is_kingside) {
 void move_perform(Board board, CastleInfo* castle_info, Move move) {
     switch (move.type) {
         case MOVE_NORMAL: {
-            if (pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 7 }) || pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 4 })) castle_info->can_white_kingside = false;
-            if (pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 0 }) || pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 4 })) castle_info->can_white_queenside = false;
-            if (pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 7 }) || pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 4 })) castle_info->can_black_kingside = false;
-            if (pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 0 }) || pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 4 })) castle_info->can_black_queenside = false;
+            PieceType piece = board_get(board, move.as.normal.from);
 
-            board_set(board, move.as.normal.to, board_get(board, move.as.normal.from));
+            switch (piece) {
+                case WHITE_ROOK:
+                    if      (pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 7 }) || pos_eq(move.as.normal.to, (Pos) { .rank = 0, .file = 7 })) castle_info->can_white_kingside = false;
+                    else if (pos_eq(move.as.normal.from, (Pos) { .rank = 0, .file = 0 }) || pos_eq(move.as.normal.to, (Pos) { .rank = 0, .file = 0 })) castle_info->can_white_queenside = false;
+
+                    break;
+                case WHITE_KING:
+                    if (move.as.normal.from.file == 4) {
+                        castle_info->can_white_kingside = false;
+                        castle_info->can_white_queenside = false;
+                    }
+
+                    break;
+                case BLACK_ROOK:
+                    if      (pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 7 }) || pos_eq(move.as.normal.to, (Pos) { .rank = 7, .file = 7 })) castle_info->can_black_kingside = false;
+                    else if (pos_eq(move.as.normal.from, (Pos) { .rank = 7, .file = 0 }) || pos_eq(move.as.normal.to, (Pos) { .rank = 7, .file = 0 })) castle_info->can_black_queenside = false;
+
+                    break;
+                case BLACK_KING:
+                    if (move.as.normal.from.file == 4) {
+                        castle_info->can_black_kingside = false;
+                        castle_info->can_black_queenside = false;
+                    }
+
+                    break;
+                default:
+                    break;
+            }
+
+            board_set(board, move.as.normal.to, piece);
             board_set(board, move.as.normal.from, EMPTY);
 
             break;
