@@ -27,7 +27,7 @@ function Chessstate:update()
     local bot = self.bots[self.turn]
 
     if bot then
-        local move = bot:get_best_move(self.turn, self.board, 2)
+        local move = bot:get_best_move(self.turn, self.board, 4)
         move:perform(self.board)
         self.turn = Piece.get_opposite_color(self.turn)
     else

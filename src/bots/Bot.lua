@@ -5,21 +5,13 @@ local Bot = {}
 
 Object:extend(Bot, "Bot")
 
-function Bot:get_best_move(color, board, depth) end
-
-function Bot:eval(board) end
-
-function Bot.best_move_and_eval(move1, eval1, move2, eval2, color)
-    if eval1 == nil then return move2, eval2 end
-    if eval2 == nil then return move1, eval1 end
-
-    if color == Piece.WHITE then
-        if eval1 > eval2 then return move1, eval1
-        else return move2, eval2 end
-    else
-        if eval1 < eval2 then return move1, eval1
-        else return move2, eval2 end
-    end
+function Bot:get_best_move(color, board, depth)
+    local move = self:get_best_eval(color, board, depth, -1 / 0, 1 / 0)
+    return move
 end
+
+function Bot:get_best_eval(color, board, depth, alpha, beta) end
+
+function Bot:eval(color, board) end
 
 return Bot
