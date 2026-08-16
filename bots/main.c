@@ -149,12 +149,46 @@ double board_eval(Board board, PieceType color) {
 
             PieceType piece = board_get(board, pos);
 
-            if (are_friends(piece, color)) eval++;
-            else if (are_enemies(piece, color)) eval--;
+            switch (piece) {
+                case WHITE_PAWN:
+                    eval++;
+                    break;
+                case WHITE_KNIGHT:
+                case WHITE_BISHOP:
+                    eval += 3;
+                    break;
+                case WHITE_ROOK:
+                    eval += 5;
+                    break;
+                case WHITE_QUEEN:
+                    eval += 9;
+                    break;
+                case WHITE_KING:
+                    eval += 100;
+                    break;
+                case BLACK_PAWN:
+                    eval--;
+                    break;
+                case BLACK_KNIGHT:
+                case BLACK_BISHOP:
+                    eval -= 3;
+                    break;
+                case BLACK_ROOK:
+                    eval -= 5;
+                    break;
+                case BLACK_QUEEN:
+                    eval -= 9;
+                    break;
+                case BLACK_KING:
+                    eval -= 100;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
-    return eval;
+    return are_friends(WHITE_PAWN, color) ? eval : -eval;
 }
 
 void board_copy(Board copy, Board original) {
