@@ -41,8 +41,16 @@ char* piece_type_to_string[] = {
     [BLACK_KING] = "BK",
 };
 
+bool are_friends(PieceType lhs, PieceType rhs) {
+    return lhs > OUT_OF_BOUNDS && rhs > OUT_OF_BOUNDS && (lhs & 8) == (rhs & 8);
+}
+
 bool are_enemies(PieceType lhs, PieceType rhs) {
     return lhs > OUT_OF_BOUNDS && rhs > OUT_OF_BOUNDS && (lhs & 8) != (rhs & 8);
+}
+
+PieceType color_swap(PieceType piece) {
+    return piece ^ 8;
 }
 
 typedef struct {
@@ -127,6 +135,30 @@ void board_set(Board board, Pos pos, PieceType piece) {
 
     board[pos.rank][file_index] &= mask_and;
     board[pos.rank][file_index] |= mask_or;
+}
+
+double board_eval(Board board, PieceType color) {
+    double eval = 0;
+
+    for (u8 rank = 0; rank < BOARD_SIZE; rank++) {
+        for (u8 file = 0; file < BOARD_SIZE; file++) {
+            Pos pos = {
+                .rank = rank,
+                .file = file,
+            };
+
+            PieceType piece = board_get(board, pos);
+
+            if (are_friends(piece, color)) eval++;
+            else if (are_enemies(piece, color)) eval--;
+        }
+    }
+
+    return eval;
+}
+
+void board_copy(Board copy, Board original) {
+    memcpy(copy, original, 32);
 }
 
 void board_print(Board board) {
@@ -532,14 +564,84 @@ void generate_moves(Board board, CastleInfo castle_info, Pos pos, MoveBuffer mov
     }
 }
 
+typedef struct {
+    Move move;
+    double eval;
+} MoveEval;
+
+MoveEval get_best_move(Board board, CastleInfo castle_info, PieceType color, size_t depth, double alpha, double beta) {
+    if (depth == 0) {
+        return (MoveEval) {
+            .move = {},
+            .eval = board_eval(board, color),
+        };
+    }
+
+    MoveEval out = {
+        .move = {},
+        .eval = -1.0 / 0.0,
+    };
+
+    for (u8 rank = 0; rank < BOARD_SIZE; rank++) {
+        for (u8 file = 0; file < BOARD_SIZE; file++) {
+            Pos pos = {
+                .rank = rank,
+                .file = file,
+            };
+
+            PieceType piece = board_get(board, pos);
+
+            if (!are_friends(piece, color)) continue;
+
+            MoveBuffer moves;
+            u8 move_index = 0;
+
+            generate_moves(board, castle_info, pos, moves, &move_index);
+
+            for (u8 i = 0; i < move_index; i++) {
+                Board copy;
+                board_copy(copy, board);
+
+                CastleInfo castle_info_copy = castle_info;
+
+                Move move = moves[i];
+                move_perform(copy, &castle_info_copy, move);
+
+                MoveEval move_eval = get_best_move(copy, castle_info_copy, color_swap(color), depth - 1, -beta, -alpha);
+                move_eval.eval = -move_eval.eval;
+
+                if (move_eval.eval > beta) return move_eval;
+
+                if (move_eval.eval > out.eval) {
+                    out.move = move;
+                    out.eval = move_eval.eval;
+                }
+
+                if (out.eval > alpha) alpha = out.eval;
+            }
+        }
+    }
+
+    return out;
+}
+
 int main(int argc, char** argv) {
-    memcpy(global_board, castle_test_board, sizeof(global_board) / sizeof(global_board[0][0]));
+    board_copy(global_board, normal_board);
+
+    PieceType color = WHITE_PAWN;
 
     while (true) {
         board_print(global_board);
 
-        char c;
-        scanf("%c", &c);
+        MoveEval best_move_eval = get_best_move(global_board, global_castle_info, color, 4, -1.0 / 0.0, 1.0 / 0.0);
+        printf("EVAL: %f, MOVE: ", best_move_eval.eval);
+        move_print(best_move_eval.move);
+        printf("\n");
+
+        color = color_swap(color);
+
+        char c = '\n';
+        while (c == '\n') scanf("%c", &c);
 
         switch (c) {
             // 't' for "teleport"
@@ -619,6 +721,9 @@ int main(int argc, char** argv) {
 
                 break;
             }
+            case 'b':
+                move_perform(global_board, &global_castle_info, best_move_eval.move);
+                break;
             // 'q' for "quit"
             case 'q':
                 return 0;
