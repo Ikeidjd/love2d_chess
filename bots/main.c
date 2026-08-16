@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 
 #define BOARD_SIZE 8
 
@@ -641,6 +643,12 @@ MoveEval get_best_move(Board board, CastleInfo castle_info, PieceType color, siz
                 Move move = moves[i];
                 move_perform(copy, &castle_info_copy, move);
 
+                // This way, even in the unluckiest case, there will always be a move
+                if (out.eval == -1.0 / 0.0) out.move = move;
+
+                // How to make it faster? Just discard random moves
+                if (rand() % 2 == 0) continue;
+
                 MoveEval move_eval = get_best_move(copy, castle_info_copy, color_swap(color), depth - 1, -beta, -alpha);
                 move_eval.eval = -move_eval.eval;
 
@@ -660,6 +668,8 @@ MoveEval get_best_move(Board board, CastleInfo castle_info, PieceType color, siz
 }
 
 int main(int argc, char** argv) {
+    srand(time(NULL));
+
     board_copy(global_board, normal_board);
 
     PieceType color = WHITE_PAWN;
