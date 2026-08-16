@@ -26,8 +26,6 @@ function BlindGreedBot:get_best_eval(color, board, depth, alpha, beta)
                 end
 
                 alpha = math.max(alpha, eval)
-
-                if best_eval >= beta then break end
             end
 
             if best_eval >= beta then break end
