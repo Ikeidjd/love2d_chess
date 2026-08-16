@@ -667,7 +667,7 @@ int main(int argc, char** argv) {
     while (true) {
         board_print(global_board);
 
-        MoveEval best_move_eval = get_best_move(global_board, global_castle_info, color, 4, -1.0 / 0.0, 1.0 / 0.0);
+        MoveEval best_move_eval = get_best_move(global_board, global_castle_info, color, 6, -1.0 / 0.0, 1.0 / 0.0);
         printf("EVAL: %f, MOVE: ", best_move_eval.eval);
         move_print(best_move_eval.move);
         printf("\n");
